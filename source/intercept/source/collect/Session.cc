@@ -38,9 +38,9 @@ namespace ic {
         if (args.as_bool(ic::FORCE_WRAPPER).unwrap_or(false))
             return WrapperSession::from(args, envp);
         if (args.as_bool(ic::FORCE_PRELOAD).unwrap_or(false))
-            return LibraryPreloadSession::from(args, envp);
+            return LibraryPreloadSession::from(args);
 
-        return LibraryPreloadSession::from(args, envp);
+        return LibraryPreloadSession::from(args);
     }
 #else
     {
@@ -72,12 +72,10 @@ namespace ic {
         return sys::path::join(result);
     }
 
-    rust::Result<int> Session::execute(const std::vector<std::string_view> &command, const std::string &address) {
+    rust::Result<int> Session::run(const ic::Execution &execution, const std::string &address) {
         server_address_ = address;
-        return supervise(command)
-                .and_then<sys::Process>([](auto builder) {
-                    return builder.spawn();
-                })
+        return supervise(execution)
+                .spawn()
                 .and_then<sys::ExitStatus>([](auto child) {
                     sys::SignalForwarder guard(child);
                     return child.wait();
